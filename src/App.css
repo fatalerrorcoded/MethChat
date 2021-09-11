@@ -24,6 +24,21 @@
   color: #61dafb;
 }
 
+.Chat-Content {
+  position: fixed;
+  height: calc(100% - 30px);
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+.Input-Box {
+  height: 20px;
+  position: fixed;
+  bottom: 5px;
+  margin: 5px 5px 5px 5px;
+  width: calc(100% - 10px);
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

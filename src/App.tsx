@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ethers } from 'ethers'; 
 
 import './App.css';
@@ -29,11 +29,28 @@ let messages: Message[] = [];
 
 const App = () => {
     const [state, setState] = useState(State.Connecting);
+    // eslint-disable-next-line
     const [stateMessages, setStateMessages] = useState<Message[]>([]);
     const [names, setNames] = useState<Map<string, string | null>>(new Map());
 
     const [textbox, setTextbox] = useState("");
     const [pending, setPending] = useState(false);
+    
+    const messageList = useRef(null);
+
+    function scrollDown() {
+        if (messageList.current != null) {
+            (messageList.current as any).scrollTop = (messageList.current as any).scrollHeight;
+        }
+    }
+
+    function isScrolledDown(): boolean {
+        if (messageList.current === null) return false;
+        let scrollTop = (messageList.current as any).scrollTop;
+        let offsetHeight = (messageList.current as any).offsetHeight;
+        let scrollHeight = (messageList.current as any).scrollHeight;
+        return  scrollTop + offsetHeight === scrollHeight;
+    }
 
     useEffect(() => {
         if ((window as any).ethereum === undefined) {
@@ -76,8 +93,10 @@ const App = () => {
                     address, content,
                     txhash: event.transactionHash,
                 }
+                let scrolledDown = isScrolledDown();
                 messages = [...messages, message];
                 setStateMessages(messages);
+                if (scrolledDown) scrollDown();
             });
 
             contract.on("NameChanged", async (address) => {
@@ -86,6 +105,7 @@ const App = () => {
                 setNames(new Map(names.set(address, name)));
             });
             setState(State.Connected);
+            scrollDown();
         }).catch(() => setState(State.AccountRequestRejected));
     }, []);
 
@@ -142,19 +162,21 @@ const App = () => {
     if (!message) {
         return (
             <div className="App">
-                <ul>
-                    <li key="start"><b><i>welcome to the start of the conversation</i></b></li>
-                    {messages.map((message) => (
-                        <li key={message.txhash}>
-                            <b>{message.address}: </b><span>{message.content}</span>
-                        </li>
-                    ))}
-                </ul>
+                <div className="Chat-Content" ref={messageList}>
+                    <ul>
+                        <li key="start"><b><i>welcome to the start of the conversation</i></b></li>
+                        {messages.map((message) => (
+                            <li key={message.txhash}>
+                                <b>{message.address}: </b><span>{message.content}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
                 <br />
-                <div style={{ padding: "5px" }}>
+                <div className="Input-Box">
                     <form onSubmit={sendMessage}>
-                        <input type="text" onChange={textInput} value={textbox} placeholder={pending ? "pending transaction" : ""} style={{ width: "100%", boxSizing: "border-box" }} />
-                        <input type="submit" />
+                        <input type="text" onChange={textInput} value={textbox} placeholder={pending ? "pending transaction" : ""} style={{ marginLeft: "5px", width: "calc(100% - 75px)", boxSizing: "border-box" }} />
+                        <input type="submit" style={{ marginLeft: "5px" }} />
                     </form>
                 </div>
             </div>
